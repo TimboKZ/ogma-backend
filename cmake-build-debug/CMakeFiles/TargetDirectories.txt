@@ -1,0 +1,3 @@
+/mnt/Newton/NixWork/ogma/ogma-backend/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/mnt/Newton/NixWork/ogma/ogma-backend/cmake-build-debug/CMakeFiles/ogma_backend.dir
+/mnt/Newton/NixWork/ogma/ogma-backend/cmake-build-debug/CMakeFiles/edit_cache.dir

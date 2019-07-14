@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/ogma_backend.dir/main.cpp.o  -o ogma_backend 
