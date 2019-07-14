@@ -1,36 +1,54 @@
 #include <iostream>
+#include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
-#include <sqlpp11/sqlpp11.h>
-#include <sqlpp11/custom_query.h>
-#include <sqlpp11/sqlite3/sqlite3.h>
+#include "Config.h"
+#include "Server.h"
 
-#include "TabSample.h"
+using namespace std;
+using namespace Ogma;
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
-namespace sql = sqlpp::sqlite3;
+int main(int ac, char *av[]) {
 
-int main() {
-    std::cout << "Starting sequence..." << std::endl;
+    // Parse command line options
+    po::options_description desc("Allowed options");
+    desc.add_options()
+            ("help", "produce help message")
+            ("port", po::value<int>(), "port on which the web server will listen")
+            ("frontend", po::value<string>(), "path to frontend build");
+    po::variables_map vm;
+    po::store(po::parse_command_line(ac, av, desc), vm);
+    po::notify(vm);
+    if (vm.count("help")) {
+        std::cout << desc << std::endl;
+        return 1;
+    }
 
-    sql::connection_config config;
-    config.path_to_database = ":memory:";
-    config.flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
-    config.debug = true;
+    // Prepare config
+    Config config;
+    if (vm.count("port")) {
+        config.server_port = vm["port"].as<int>();
+    } else {
+        std::cout << "Server port was not specified. Using default." << std::endl;
+        config.server_port = 10548;
+    }
+    if (vm.count("frontend")) {
+        config.frontend_build_path = fs::canonical(vm["frontend"].as<string>());
+    } else {
+        std::cout << "Frontend build path was not specified. Aborting." << std::endl;
+        return 2;
+    }
 
-    sql::connection db(config);
-    std::cerr << __FILE__ << ": " << __LINE__ << std::endl;
-    db.execute("CREATE TABLE tab_sample (\
-        alpha bigint(20) DEFAULT NULL,\
-        beta varchar(255) DEFAULT NULL,\
-        gamma bool DEFAULT NULL\
-    )");
+    // Log effective config
+    std::cout << "Effective config:" << std::endl;
+    std::cout << "  - server port: " << config.server_port << std::endl;
+    std::cout << "  - frontend build path: " << config.frontend_build_path << std::endl;
+    std::cout << std::endl;
 
-    TabSample tab;
-    for (const auto &row : db(select(all_of(tab)).from(tab).unconditionally())) {
-        int64_t alpha = row.alpha;
-        std::string beta = row.beta;
-        bool gamma = row.gamma;
-    };
-
-    std::cout << "Done..." << std::endl;
+    Server server(config);
+    server.start();
     return 0;
 }
+
