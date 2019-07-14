@@ -3,15 +3,16 @@ project(ogma_backend)
 
 set(CMAKE_CXX_STANDARD 14)
 
-find_package(Boost 1.69 COMPONENTS program_options REQUIRED)
-find_package(SQLite3 REQUIRED)
-
 set(LIB_DIR "${PROJECT_SOURCE_DIR}/libs")
 set(HinnantDate_ROOT_DIR "${LIB_DIR}/date/include")
-set(Sqlite3_DIR "${LIB_DIR}/libsqlite3")
+set(SQLite3_DIR "${LIB_DIR}/libsqlite3/cmake")
 set(Sqlpp11_DIR "${LIB_DIR}/sqlpp11")
 set(Sqlpp11Sqlite3_DIR "${LIB_DIR}/sqlpp11-connector-sqlite3")
 set(SimpleWS_DIR "${LIB_DIR}/Simple-Web-Server")
+set(Websocketpp_DIR "${LIB_DIR}/websocketpp")
+
+find_package(Boost 1.69 COMPONENTS program_options filesystem REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 include_directories(
         ${HinnantDate_ROOT_DIR}
@@ -19,6 +20,7 @@ include_directories(
         ${Sqlpp11_DIR}/include
         ${Sqlpp11Sqlite3_DIR}/include
         ${SimpleWS_DIR}
+        ${Websocketpp_DIR}/include
 )
 
 add_subdirectory(${Sqlpp11_DIR})

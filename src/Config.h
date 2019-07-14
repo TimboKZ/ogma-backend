@@ -12,7 +12,8 @@ namespace Ogma {
     namespace fs = boost::filesystem;
 
     struct Config {
-        int server_port;
+        int web_server_port;
+        int socket_server_port;
         fs::path frontend_build_path;
     };
 

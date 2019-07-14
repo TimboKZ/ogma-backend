@@ -10,7 +10,7 @@ using namespace std;
 using namespace Ogma;
 
 Server::Server(Config _config) : config(std::move(_config)) {
-    web_server.config.port = config.server_port;
+    web_server.config.port = config.web_server_port;
     web_server.default_resource["GET"] = [this](shared_ptr<HttpServer::Response> response,
                                                 shared_ptr<HttpServer::Request> request) {
         try {
@@ -38,25 +38,26 @@ Server::Server(Config _config) : config(std::move(_config)) {
 
                 // Trick to define a recursive function within this scope (for example purposes)
                 class FileServer {
-                public:
-                    static void
-                    read_and_send(const shared_ptr<HttpServer::Response> &response, const shared_ptr<ifstream> &ifs) {
-                        // Read and send 128 KB at a time
-                        static vector<char> buffer(131072); // Safe when server is running on one thread
-                        streamsize read_length;
-                        if ((read_length = ifs->read(&buffer[0], static_cast<streamsize>(buffer.size())).gcount()) >
-                            0) {
-                            response->write(&buffer[0], read_length);
-                            if (read_length == static_cast<streamsize>(buffer.size())) {
-                                response->send([response, ifs](const SimpleWeb::error_code &ec) {
-                                    if (!ec)
-                                        read_and_send(response, ifs);
-                                    else
-                                        cerr << "Connection interrupted" << endl;
-                                });
+                    public:
+                        static void
+                        read_and_send(const shared_ptr<HttpServer::Response> &response,
+                                      const shared_ptr<ifstream> &ifs) {
+                            // Read and send 128 KB at a time
+                            static vector<char> buffer(131072); // Safe when server is running on one thread
+                            streamsize read_length;
+                            if ((read_length = ifs->read(&buffer[0], static_cast<streamsize>(buffer.size())).gcount()) >
+                                0) {
+                                response->write(&buffer[0], read_length);
+                                if (read_length == static_cast<streamsize>(buffer.size())) {
+                                    response->send([response, ifs](const SimpleWeb::error_code &ec) {
+                                        if (!ec)
+                                            read_and_send(response, ifs);
+                                        else
+                                            cerr << "Connection interrupted" << endl;
+                                    });
+                                }
                             }
                         }
-                    }
                 };
                 FileServer::read_and_send(response, ifs);
             } else
@@ -67,10 +68,24 @@ Server::Server(Config _config) : config(std::move(_config)) {
                             "Could not open path " + request->path + ": " + e.what());
         }
     };
+
+    socket_server.set_message_handler([this](ws::connection_hdl hdl, SocketServer::message_ptr msg) {
+        this->on_message(hdl, msg);
+    });
+    socket_server.init_asio();
+    socket_server.listen(config.socket_server_port);
+    socket_server.start_accept();
+
 }
 
 void Server::start() {
-    thread server_thread([this]() { web_server.start(); });
-    server_thread.join();
+    thread web_server_thread([this]() { web_server.start(); });
+    thread socket_server_thread([this]() { socket_server.run(); });
+    web_server_thread.join();
+    socket_server_thread.join();
     this_thread::sleep_for(chrono::seconds(1));
+}
+
+void Server::on_message(ws::connection_hdl hdl, SocketServer::message_ptr msg) {
+    cout << msg->get_payload() << endl;
 }
