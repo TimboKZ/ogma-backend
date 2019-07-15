@@ -69,23 +69,14 @@ Server::Server(Config _config) : config(std::move(_config)) {
         }
     };
 
-    socket_server.set_message_handler([this](ws::connection_hdl hdl, SocketServer::message_ptr msg) {
-        this->on_message(hdl, msg);
-    });
-    socket_server.init_asio();
-    socket_server.listen(config.socket_server_port);
-    socket_server.start_accept();
-
 }
 
 void Server::start() {
-    thread web_server_thread([this]() { web_server.start(); });
-    thread socket_server_thread([this]() { socket_server.run(); });
-    web_server_thread.join();
-    socket_server_thread.join();
+    thread web_thread([this]() { web_server.start(); });
+    web_thread.join();
     this_thread::sleep_for(chrono::seconds(1));
 }
 
-void Server::on_message(ws::connection_hdl hdl, SocketServer::message_ptr msg) {
-    cout << msg->get_payload() << endl;
+Server::~Server() {
+    web_server.stop();
 }

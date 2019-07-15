@@ -23,12 +23,10 @@ namespace Ogma {
         private:
             Config config;
             HttpServer web_server;
-            SocketServer socket_server;
-
-            void on_message(websocketpp::connection_hdl hdl, SocketServer::message_ptr msg);
 
         public:
             explicit Server(Config config);
+            virtual ~Server();
             void start();
 
     };

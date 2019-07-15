@@ -39,6 +39,7 @@ add_executable(
         ogma_backend
         src/main.cpp
         src/Server.cpp
+        src/WebSocket.cpp
         ${Lib_SRC}
 )
 target_link_libraries(

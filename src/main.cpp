@@ -4,6 +4,7 @@
 
 #include "Config.h"
 #include "Server.h"
+#include "WebSocket.h"
 
 using namespace std;
 using namespace Ogma;
@@ -59,7 +60,9 @@ int main(int ac, char *av[]) {
     std::cout << "  - frontend build path: " << config.frontend_build_path << std::endl;
     std::cout << std::endl;
 
+    WebSocket webSocket(config);
     Server server(config);
+    webSocket.start();
     server.start();
     return 0;
 }
