@@ -62,8 +62,11 @@ int main(int ac, char *av[]) {
 
     WebSocket webSocket(config);
     Server server(config);
+
+    thread broadcast_thread(&WebSocket::process_broadcast_queue, &webSocket);
     webSocket.start();
     server.start();
+    broadcast_thread.join();
     return 0;
 }
 

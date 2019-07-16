@@ -8,26 +8,22 @@ set(HinnantDate_ROOT_DIR "${LIB_DIR}/date/include")
 set(SQLite3_DIR "${LIB_DIR}/libsqlite3/cmake")
 set(Sqlpp11_DIR "${LIB_DIR}/sqlpp11")
 set(Sqlpp11Sqlite3_DIR "${LIB_DIR}/sqlpp11-connector-sqlite3")
-set(SimpleWS_DIR "${LIB_DIR}/Simple-Web-Server")
-set(Websocketpp_DIR "${LIB_DIR}/websocketpp")
-set(Json_DIR "${LIB_DIR}/json")
+set(Hashidsxx_DIR "${LIB_DIR}/hashidsxx")
 
 find_package(Boost 1.69 COMPONENTS program_options filesystem REQUIRED)
 find_package(SQLite3 REQUIRED)
 
 include_directories(
+        ${LIB_DIR}/include
         ${HinnantDate_ROOT_DIR}
         ${HinnantDate_ROOT_DIR}/date
         ${Sqlpp11_DIR}/include
         ${Sqlpp11Sqlite3_DIR}/include
-        ${SimpleWS_DIR}
-        ${Websocketpp_DIR}/include
-        ${Json_DIR}/include
+        ${Hashidsxx_DIR}
 )
 
 add_subdirectory(${Sqlpp11_DIR})
 add_subdirectory(${Sqlpp11Sqlite3_DIR})
-add_subdirectory(${SimpleWS_DIR})
 
 file(
         GLOB Lib_SRC
@@ -35,6 +31,7 @@ file(
         "${Sqlpp11Sqlite3_DIR}/src/*.cpp"
         "${Sqlpp11Sqlite3_DIR}/src/detail/*.h"
         "${Sqlpp11Sqlite3_DIR}/src/detail/*.cpp"
+        "${Hashidsxx_DIR}/*.cpp"
 )
 
 add_executable(
