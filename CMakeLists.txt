@@ -10,6 +10,7 @@ set(Sqlpp11_DIR "${LIB_DIR}/sqlpp11")
 set(Sqlpp11Sqlite3_DIR "${LIB_DIR}/sqlpp11-connector-sqlite3")
 set(SimpleWS_DIR "${LIB_DIR}/Simple-Web-Server")
 set(Websocketpp_DIR "${LIB_DIR}/websocketpp")
+set(Json_DIR "${LIB_DIR}/json")
 
 find_package(Boost 1.69 COMPONENTS program_options filesystem REQUIRED)
 find_package(SQLite3 REQUIRED)
@@ -21,6 +22,7 @@ include_directories(
         ${Sqlpp11Sqlite3_DIR}/include
         ${SimpleWS_DIR}
         ${Websocketpp_DIR}/include
+        ${Json_DIR}/include
 )
 
 add_subdirectory(${Sqlpp11_DIR})

@@ -1,3 +1,5 @@
+#include <utility>
+
 //
 // Created by euql1n on 7/15/19.
 //
@@ -21,50 +23,71 @@ WebSocket::WebSocket(Config _config) : config(std::move(_config)) {
     socket_server.set_message_handler(ws::lib::bind(&WebSocket::on_message, this, ph::_1, ph::_2));
 }
 
-void WebSocket::on_open(ws::connection_hdl hdl) {
-    connection_list.insert(hdl);
+void WebSocket::on_open(const ws::connection_hdl &handle) {
+    connection_list.insert(handle);
+    cout << "Added handle!" << endl;
 }
 
-void WebSocket::on_close(ws::connection_hdl hdl) {
-    connection_list.erase(hdl);
+void WebSocket::on_close(const ws::connection_hdl &handle) {
+    connection_list.erase(handle);
+    cout << "Removed handle!" << endl;
 }
 
-void WebSocket::on_message(ws::connection_hdl hdl, SocketServer::message_ptr msg) {
+
+void WebSocket::on_message(ws::connection_hdl handle, SocketServer::message_ptr msg) {
     vector<string> parts;
 
-    string payload(msg->get_payload());
+    auto requestAction = json::parse(msg->get_payload());
 
-    auto name_split_i = -1;
-    auto data_split_i = -1;
-    for (auto i = 0; i < payload.length(); ++i) {
-        auto c = payload.at(i);
-        if (c == '#') name_split_i = i;
-        else if (c == '@') {
-            data_split_i = i;
-            break;
-        }
+    json responseAction;
+    try {
+        SocketServer::connection_ptr connection = socket_server.get_con_from_hdl(handle);
+        responseAction = this->process_request(connection, requestAction);
+    } catch (const std::exception &e) {
+        responseAction["error"] = e.what();
     }
 
-    // Extract the data string (if any)
-    string data = data_split_i != -1 ? payload.substr(data_split_i + 1) : "";
+    if (requestAction.find("id") != requestAction.end()) {
+        responseAction["id"] = requestAction["id"];
+    }
 
-    // Extract the request ID string (if any)
-    string reqId = name_split_i != -1 ? payload.substr(0, name_split_i) : "";
+    socket_server.send(std::move(handle), responseAction.dump(), msg->get_opcode());
+}
 
-    // Extract the name of the action
-    auto nameLength = max(data_split_i, int(payload.length())) - (name_split_i + 1);
-    string name = payload.substr(name_split_i + 1, nameLength);
+json get_client_details(const SocketServer::connection_ptr &connection) {
+    json details;
+    details["id"] = connection->get_host();
+    details["ip"] = connection->get_host();
+    details["localClient"] = false; // TODO: Compare to IP of the server
+    details["userAgent"] = connection->get_request_header("user-agent");
+    return details;
+}
 
-    cout << "Received request <" + name + "> with ID " + reqId + " and data " + data + "." << endl;
+json WebSocket::process_request(const SocketServer::connection_ptr &connection, json action) {
+    cout << "[IPC] Received action: " << action << endl;
+    if (action.find("name") == action.end()) throw runtime_error("Request action has no name specified!");
+    string name = action["name"];
 
-    // Prepare response and send it back
-    string responseData; // TODO: Prepare response here
-    string response;
-    if (reqId.length() >= 1) response = reqId + "#" + name;
-    else response = name;
-    if (responseData.length() >= 1) response += "@" + responseData;
+    json payload;
 
-    socket_server.send(hdl, response, msg->get_opcode());
+    if (name == "getClientDetails") {
+        payload = get_client_details(connection);
+    } else if (name == "getClientList") {
+        payload = json::array();
+        cout << "Connection count: " << connection_list.size() << endl;
+        for (auto &clientHandle : connection_list) {
+            payload.emplace_back(get_client_details(socket_server.get_con_from_hdl(clientHandle)));
+        }
+    } else if (name == "getSummaries") {
+        payload = json::array();
+    } else {
+        throw runtime_error("Action " + name + " is not supported .");
+    }
+
+    json responseAction;
+    responseAction["name"] = name;
+    responseAction["payload"] = payload;
+    return responseAction;
 }
 
 void WebSocket::start() {

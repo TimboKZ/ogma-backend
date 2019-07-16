@@ -6,13 +6,16 @@
 #define OGMA_BACKEND_WEBSOCKET_H
 
 #include <set>
-#include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
+#include <websocketpp/config/asio_no_tls.hpp>
+#include <nlohmann/json.hpp>
+
 #include "Config.h"
 
 namespace Ogma {
     namespace ws = websocketpp;
     using SocketServer = ws::server<ws::config::asio>;
+    using json = nlohmann::json;
 
     class WebSocket {
         private:
@@ -20,9 +23,10 @@ namespace Ogma {
             SocketServer socket_server;
             std::set<ws::connection_hdl, std::owner_less<ws::connection_hdl>> connection_list;
 
-            void on_open(ws::connection_hdl hdl);
-            void on_close(ws::connection_hdl hdl);
-            void on_message(ws::connection_hdl hdl, SocketServer::message_ptr msg);
+            void on_open(const ws::connection_hdl& handle);
+            void on_close(const ws::connection_hdl& handle);
+            json process_request(const SocketServer::connection_ptr& connection, json action);
+            void on_message(ws::connection_hdl handle, SocketServer::message_ptr msg);
 
         public:
             explicit WebSocket(Config config);
